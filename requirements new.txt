@@ -1,0 +1,11 @@
+torch==2.7.1
+ultralytics==8.3.152
+opencv-python==4.9.0.80
+ioutrack-rs==0.4.0
+numpy>=1.26,<1.27
+astral==3.2
+gspread==6.2.1
+google-auth>=2.29
+google-auth-httplib2>=0.2
+google-auth-oauthlib>=1.2
+pipdeptree
