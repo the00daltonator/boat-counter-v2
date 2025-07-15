@@ -1,0 +1,30 @@
+# Boat Counter Project Requirements
+# Install with: pip3 install -r requirements.txt
+# Note: gsheets_creds.json (Google Sheets credentials) must be provided separately and is NOT included in this repo.
+
+ultralytics>=8.0.0
+opencv-python>=4.5.0
+numpy>=1.21.0
+torch>=1.9.0
+torchvision>=0.10.0
+filterpy>=1.4.5
+matplotlib>=3.0.0
+scikit-image>=0.18.0
+lap>=0.4.0
+scipy>=1.7.0
+gspread>=5.0.0
+google-auth>=2.0.0
+astral>=2.2
+pytz>=2021.1 
+
+# Install venv if not already installed
+sudo apt install python3-venv -y
+
+# Create a virtual environment in your project folder
+python3 -m venv venv
+
+# Activate the virtual environment
+source venv/bin/activate
+
+# Now install all requirements
+pip install -r requirements.txt 
