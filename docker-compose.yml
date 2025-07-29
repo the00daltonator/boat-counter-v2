@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  boat-counter:
+    build: .
+    container_name: boat-counter-app
+    restart: unless-stopped
+    environment:
+      - DISPLAY=${DISPLAY:-:0}
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Mount camera device (if using USB camera)
+      - /dev/video0:/dev/video0:rw
+      # Mount logs directory for persistence
+      - ./logs:/app/logs
+      # Mount snapshots directory for persistence
+      - ./snapshots:/app/snapshots
+      # Mount credentials (if using Google Sheets)
+      - ./gsheets_creds.json:/app/gsheets_creds.json:ro
+      # Mount mask file (if using ROI mask)
+      - ./mask.png:/app/mask.png:ro
+    devices:
+      # Allow access to camera devices
+      - /dev/video0:/dev/video0
+    network_mode: host
+    # Alternative: use host networking for camera access
+    # network_mode: host
+    # Or expose specific ports if needed
+    # ports:
+    #   - "8080:8080"
+    
+  # Optional: Add a web interface service
+  # web-interface:
+  #   image: nginx:alpine
+  #   container_name: boat-counter-web
+  #   ports:
+  #     - "8080:80"
+  #   volumes:
+  #     - ./web:/usr/share/nginx/html
+  #     - ./snapshots:/usr/share/nginx/html/snapshots:ro
+  #   depends_on:
+  #     - boat-counter 

@@ -28,7 +28,7 @@ import gspread  # Google Sheets API
 from google.oauth2.service_account import Credentials  # Google service account auth
 
 # === CONFIGURATION SECTION ===
-VIDEO_SOURCE = "test_boats3.mp4"  # Path to the input video file
+VIDEO_SOURCE = 0  #"test_boats3.mp4"  # Path to the input video file
 MODEL_PATH = "yolov8n.pt"         # Path to YOLOv8 model file
 CLASS_FILTER = "boat"             # Only detect and count boats
 CONFIDENCE_THRESHOLD = 0.15        # Minimum confidence for detection

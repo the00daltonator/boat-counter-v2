@@ -1,16 +1,16 @@
-"""boat_counter_full_debug.py — Raspberry Pi Edition
+"""boat_counter_full_debug.py — Raspberry Pi Edition
 ===================================================
-A **complete**, production‑ready boat counter for Raspberry Pi 4/5 that uses
+A **complete**, production‑ready boat counter for Raspberry Pi 4/5 that uses
 PiCamera2 or any V4L2 webcam, Ultralytics YOLOv8 for detection, and the blazing‑
 fast Rust IOU tracker (`ioutrack‑rs`). Includes:
 
 * Rotating file + console logging at DEBUG level
 * Sunrise/sunset sleep to save power (Colorado Springs coords)
-* Optional ROI mask, HDMI preview, Google Sheets logging
+* Optional ROI mask, HDMI preview, Google Sheets logging
 * Robust camera retry logic
 * Snapshot saving for each counted boat
 
-Rebuilt end‑to‑end on 15 Jul 2025 by DHS.
+Rebuilt end‑to‑end on 15 Jul 2025 by DHS.
 
 Works on pi
 
@@ -40,14 +40,32 @@ import astral  # Astral for sunrise/sunset calculations
 import astral.sun as astral_sun  # Sun calculations from astral
 
 try:
-    import gspread                           # Google Sheets
+    import gspread                           # Google Sheets
     from google.oauth2.service_account import Credentials  # Google credentials
 except ImportError:
     gspread = None  # If not available, set to None
 
-# ───────────────────────── Logger setup ─────────────────────────
-LOG_DIR = Path("logs")  # Directory for logs
-LOG_DIR.mkdir(exist_ok=True, parents=True)  # Create log directory if it doesn't exist
+# ───────────────────────── Config ──────────────────────────
+TZ                = ZoneInfo("America/Denver")  # Timezone
+MODEL_PATH        = "yolov8n.pt"          # nano model is lightest
+VIDEO_SOURCE      = 0                     # camera index or video file
+FRAME_W, FRAME_H  = 640, 360  # Frame width and height
+COUNT_LINE_RATIO  = 0.5                   # 50 % of width
+CONF_THRESHOLD    = 0.35  # Confidence threshold for detection
+COOLDOWN_SEC      = 5                     # per‑ID throttle
+SNAPSHOT_DIR      = Path("snapshots")  # Directory for snapshots
+LOG_DIR           = Path("logs")  # Directory for logs
+GSHEET_JSON       = "gsheets_creds.json"  # Google Sheets credentials file
+GSHEET_NAME       = "Boat Counter Logs"  # Google Sheets name
+MASK_PATH         = "mask.png"            # optional binary mask
+DISPLAY_WINDOW    = True                 # True to view on HDMI
+MAX_CAMERA_RETRY  = 5  # Max camera retries
+RETRY_BACKOFF_SEC = 2  # Retry backoff in seconds
+
+for d in (SNAPSHOT_DIR, LOG_DIR):
+    d.mkdir(exist_ok=True)  # Ensure directories exist
+
+# ──────────────────────── Logging ──────────────────────────
 
 def _setup_logger() -> logging.Logger:
     lg = logging.getLogger("boat_counter")  # Create logger
@@ -57,8 +75,7 @@ def _setup_logger() -> logging.Logger:
     sh = logging.StreamHandler(sys.stdout)  # Stream handler for console
     sh.setFormatter(fmt)  # Set format for stream handler
     lg.addHandler(sh)  # Add stream handler to logger
-    fh = RotatingFileHandler(LOG_DIR / "boat_counter.log",
-                             maxBytes=5_000_000, backupCount=3)  # Rotating file handler
+    fh = RotatingFileHandler(LOG_DIR / "boat_counter.log", maxBytes=5_000_000, backupCount=3)
     fh.setFormatter(fmt)  # Set format for file handler
     lg.addHandler(fh)  # Add file handler to logger
     return lg  # Return configured logger
@@ -85,71 +102,6 @@ except ImportError as e1:
         )
         from sort import Sort         # needs filterpy & scikit‑image
 
-
-# ───────────────────────── Logger setup ─────────────────────────
-def _setup_logger() -> logging.Logger:
-    lg = logging.getLogger("boat_counter")  # Create logger
-    lg.setLevel(logging.DEBUG)  # Set log level to DEBUG
-    fmt = logging.Formatter("%(asctime)s [%(levelname)8s] %(message)s",
-                            "%Y-%m-%d %H:%M:%S")  # Log format
-    sh = logging.StreamHandler(sys.stdout)  # Stream handler for console
-    sh.setFormatter(fmt)  # Set format for stream handler
-    lg.addHandler(sh)  # Add stream handler to logger
-    fh = RotatingFileHandler("logs/boat_counter.log",
-                             maxBytes=5_000_000, backupCount=3)  # Rotating file handler
-    fh.setFormatter(fmt)  # Set format for file handler
-    lg.addHandler(fh)  # Add file handler to logger
-    return lg  # Return configured logger
-
-log = _setup_logger()          # ← logger now exists
-
-# ────────── Tracker import (must come AFTER logger) ──────────
-try:
-    from ioutrack_rs import IOUTracker as Sort  # Try Rust tracker again
-except ImportError:
-    log.warning("ioutrack_rs unavailable — falling back to Python SORT")  # Log fallback
-    from sort import Sort      # requires scikit‑image
-  
-
-# ───────────────────────── Config ──────────────────────────
-TZ                = ZoneInfo("America/Denver")  # Timezone
-MODEL_PATH        = "yolov8n.pt"          # nano model is lightest
-VIDEO_SOURCE      = 0                     # camera index or video file
-FRAME_W, FRAME_H  = 640, 360  # Frame width and height
-COUNT_LINE_RATIO  = 0.5                   # 50 % of width
-CONF_THRESHOLD    = 0.35  # Confidence threshold for detection
-COOLDOWN_SEC      = 5                     # per‑ID throttle
-SNAPSHOT_DIR      = Path("snapshots")  # Directory for snapshots
-LOG_DIR           = Path("logs")  # Directory for logs
-GSHEET_JSON       = "gsheets_creds.json"  # Google Sheets credentials file
-GSHEET_NAME       = "Boat Counter Logs"  # Google Sheets name
-MASK_PATH         = "mask.png"            # optional binary mask
-DISPLAY_WINDOW    = False                 # True to view on HDMI
-MAX_CAMERA_RETRY  = 5  # Max camera retries
-RETRY_BACKOFF_SEC = 2  # Retry backoff in seconds
-DISPLAY_WINDOW = True      # set False to run head?less
-
-
-for d in (SNAPSHOT_DIR, LOG_DIR):
-    d.mkdir(exist_ok=True)  # Ensure directories exist
-
-# ──────────────────────── Logging ──────────────────────────
-
-def _setup_logger() -> logging.Logger:
-    lg = logging.getLogger("boat_counter")  # Create logger
-    lg.setLevel(logging.DEBUG)  # Set log level to DEBUG
-    fmt = logging.Formatter("%(asctime)s [%(levelname)8s] %(message)s",
-                            "%Y-%m-%d %H:%M:%S")  # Log format
-    sh = logging.StreamHandler(sys.stdout)  # Stream handler for console
-    sh.setFormatter(fmt)  # Set format for stream handler
-    lg.addHandler(sh)  # Add stream handler to logger
-    fh = RotatingFileHandler(LOG_DIR / "boat_counter.log", maxBytes=5_000_000, backupCount=3)
-    fh.setFormatter(fmt)  # Set format for file handler
-    lg.addHandler(fh)  # Add file handler to logger
-    return lg  # Return configured logger
-
-log = _setup_logger()  # Initialize logger
-
 # ──────────── Sunrise / Sunset helper ─────────────
 _city = astral.LocationInfo(latitude=38.833, longitude=-104.821, timezone=str(TZ))  # City info
 
@@ -158,7 +110,7 @@ def is_daytime(ts: Optional[datetime] = None) -> bool:
     sun = astral_sun.sun(_city.observer, date=ts.date(), tzinfo=TZ)  # Get sun times
     return sun["dawn"] <= ts <= sun["dusk"]  # Return True if daytime
 
-# ───────────── Google Sheets (optional) ────────────
+# ───────────── Google Sheets (optional) ────────────
 
 def _init_sheet():
     if gspread is None:
@@ -169,10 +121,10 @@ def _init_sheet():
                   "https://www.googleapis.com/auth/drive"]  # Scopes for Google Sheets
         creds = Credentials.from_service_account_file(GSHEET_JSON, scopes=scopes)  # type: ignore  # Load credentials
         sheet = gspread.authorize(creds).open(GSHEET_NAME).sheet1  # type: ignore  # Open sheet
-        log.info("Connected to Google Sheets")  # Log connection
+        log.info("Connected to Google Sheets")  # Log connection
         return sheet  # Return sheet object
     except Exception as e:
-        log.warning(f"Google Sheets disabled: {e}")  # Warn on failure
+        log.warning(f"Google Sheets disabled: {e}")  # Warn on failure
         return None  # Return None on failure
 
 sheet = _init_sheet()  # Initialize Google Sheets
@@ -271,7 +223,7 @@ def main():
 
             # Sleep at night
             if not is_daytime(now):
-                log.info(f"Nighttime {now:%H:%M} — sleeping 5 min")  # Log sleep
+                log.info(f"Nighttime {now:%H:%M} — sleeping 5 min")  # Log sleep
                 cam.release()  # Release camera
                 time.sleep(300)  # Sleep for 5 minutes
                 cam = Camera()  # Re-initialize camera
