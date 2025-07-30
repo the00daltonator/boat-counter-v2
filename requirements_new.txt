@@ -9,3 +9,6 @@ google-auth>=2.29
 google-auth-httplib2>=0.2
 google-auth-oauthlib>=1.2
 pipdeptree
+scikit-image>=0.19.0
+filterpy>=1.4.5
+scipy>=1.7.0
