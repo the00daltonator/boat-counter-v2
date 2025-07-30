@@ -48,7 +48,7 @@ except ImportError:
 # ───────────────────────── Config ──────────────────────────
 TZ                = ZoneInfo("America/Denver")  # Timezone
 MODEL_PATH        = "yolov8n.pt"          # nano model is lightest
-VIDEO_SOURCE      = 0                     # camera index or video file
+VIDEO_SOURCE      = 0 #"test_pattern.mp4" # camera index or video file
 FRAME_W, FRAME_H  = 640, 360  # Frame width and height
 COUNT_LINE_RATIO  = 0.5                   # 50 % of width
 CONF_THRESHOLD    = 0.35  # Confidence threshold for detection
@@ -58,7 +58,7 @@ LOG_DIR           = Path("logs")  # Directory for logs
 GSHEET_JSON       = "gsheets_creds.json"  # Google Sheets credentials file
 GSHEET_NAME       = "Boat Counter Logs"  # Google Sheets name
 MASK_PATH         = "mask.png"            # optional binary mask
-DISPLAY_WINDOW    = True                 # True to view on HDMI
+DISPLAY_WINDOW    = False                 # False to run headless
 MAX_CAMERA_RETRY  = 5  # Max camera retries
 RETRY_BACKOFF_SEC = 2  # Retry backoff in seconds
 
@@ -248,7 +248,10 @@ def main():
                     detections.append([x1, y1, x2, y2, float(conf)])  # Add detection
 
             # Run tracker  ───────────────────────────────────────────
-            tracks = tracker.update(np.array(detections, dtype=np.float32))  # Update tracker
+            if len(detections) == 0:
+                tracks = np.empty((0, 5))  # Empty tracks when no detections
+            else:
+                tracks = tracker.update(np.array(detections, dtype=np.float32))  # Update tracker
 
             # Draw & count  ─────────────────────────────────────────
             line_x = int(frame.shape[1] * COUNT_LINE_RATIO)  # Calculate line x

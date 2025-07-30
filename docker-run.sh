@@ -27,6 +27,6 @@ docker run --rm \
   -v $(pwd)/mask.png:/app/mask.png:ro \
   -e DISPLAY=$DISPLAY \
   -e PYTHONUNBUFFERED=1 \
-  $IMAGE_NAME:$TAG
+  $IMAGE_NAME:$TAG python boat_counter_full_debug-10.py
 
 echo "Container stopped. Check logs in ./logs directory." 
