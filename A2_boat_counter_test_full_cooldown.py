@@ -28,7 +28,16 @@ import gspread  # Google Sheets API
 from google.oauth2.service_account import Credentials  # Google service account auth
 
 # === CONFIGURATION SECTION ===
-VIDEO_SOURCE = 0  #"test_boats3.mp4"  # Path to the input video file
+# Check for VIDEO_DEVICE_INDEX environment variable
+video_index = os.environ.get('VIDEO_DEVICE_INDEX', '0')
+try:
+    VIDEO_SOURCE = int(video_index)  # Convert to integer
+    print(f"[📹] Using video device index: {VIDEO_SOURCE}")
+except ValueError:
+    # If conversion fails, default to 0
+    VIDEO_SOURCE = 0
+    print(f"[⚠️] Invalid video index: {video_index}, using default: 0")
+
 MODEL_PATH = "yolov8n.pt"         # Path to YOLOv8 model file
 CLASS_FILTER = "boat"             # Only detect and count boats
 CONFIDENCE_THRESHOLD = 0.15        # Minimum confidence for detection

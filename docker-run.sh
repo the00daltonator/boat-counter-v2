@@ -5,6 +5,9 @@
 IMAGE_NAME="boat-counter"
 TAG="latest"
 
+# Default video device
+VIDEO_DEVICE="/dev/video13"
+
 # Make sure snapshots and logs directories exist
 mkdir -p ./logs ./snapshots
 
@@ -13,10 +16,13 @@ REBUILD=false
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --rebuild) REBUILD=true ;;
+        --video=*) VIDEO_DEVICE="${1#*=}" ;;
         *) echo "Unknown parameter: $1"; exit 1 ;;
     esac
     shift
 done
+
+echo "🎥 Using video device: $VIDEO_DEVICE"
 
 # Check if we need to build the image
 if [[ "$(docker images -q $IMAGE_NAME:$TAG 2> /dev/null)" == "" ]] || [[ "$REBUILD" == true ]]; then
@@ -28,7 +34,7 @@ fi
 docker run --rm \
   --name boat-counter-app \
   --privileged \
-  --device=/dev/video0:/dev/video0 \
+  --device=$VIDEO_DEVICE:$VIDEO_DEVICE \
   -v /opt/vc:/opt/vc \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
   -v $(pwd)/logs:/app/logs \
@@ -37,6 +43,7 @@ docker run --rm \
   -v $(pwd)/mask.png:/app/mask.png:ro \
   -e DISPLAY=$DISPLAY \
   -e PYTHONUNBUFFERED=1 \
+  -e VIDEO_DEVICE_INDEX=$(echo $VIDEO_DEVICE | sed 's/.*video//') \
   $IMAGE_NAME:$TAG python A2_boat_counter_test_full_cooldown.py
 
 echo "Container stopped. Check logs in ./logs directory." 
