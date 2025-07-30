@@ -8,10 +8,20 @@ TAG="latest"
 # Make sure snapshots and logs directories exist
 mkdir -p ./logs ./snapshots
 
+# Parse command line arguments
+REBUILD=false
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --rebuild) REBUILD=true ;;
+        *) echo "Unknown parameter: $1"; exit 1 ;;
+    esac
+    shift
+done
+
 # Check if we need to build the image
-if [[ "$(docker images -q $IMAGE_NAME:$TAG 2> /dev/null)" == "" ]]; then
+if [[ "$(docker images -q $IMAGE_NAME:$TAG 2> /dev/null)" == "" ]] || [[ "$REBUILD" == true ]]; then
   echo "🔨 Building Docker image..."
-  docker build -t $IMAGE_NAME:$TAG .
+  docker build --no-cache -t $IMAGE_NAME:$TAG .
 fi
 
 # Run the container with access to camera and X11 display
