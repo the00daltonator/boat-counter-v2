@@ -36,6 +36,7 @@ SNAPSHOT_DIR = "snapshots"        # Directory to save boat snapshots
 GSHEET_CREDS_FILE = "gsheets_creds.json"  # Google Sheets service account file
 GOOGLE_SHEET_NAME = "Boat Counter Logs"   # Name of the Google Sheet
 COOLDOWN_SECONDS = 5  # Cooldown per boat ID to prevent duplicates
+DISPLAY_WINDOW = False  # Set to False when running in Docker/headless mode
 
 # === SETUP GOOGLE SHEETS CONNECTION ===
 sheet = None  # Will hold the Google Sheet object if connection is successful
@@ -104,7 +105,12 @@ while True:  # Loop over video frames
             if currentClass == CLASS_FILTER and conf > CONFIDENCE_THRESHOLD:  # Filter by class and confidence
                 detections = np.vstack((detections, [x1, y1, x2, y2, conf]))  # Add detection to array
 
-    resultsTracker = tracker.update(detections)  # Track detected objects
+    # Handle empty detections array properly
+    if len(detections) == 0:
+        resultsTracker = np.empty((0, 5))
+    else:
+        resultsTracker = tracker.update(detections)  # Track detected objects
+        
     for result in resultsTracker:  # Loop over tracked objects
         x1, y1, x2, y2, id = map(int, result)  # Get bounding box and ID
         cx, cy = x1 + (x2 - x1) // 2, y1 + (y2 - y1) // 2  # Center of the box
@@ -154,22 +160,25 @@ while True:  # Loop over video frames
         else:
             direction = "???"  # Not enough info to determine
 
-        cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 255), 2)  # Bounding box
-        cv2.putText(img, f"ID: {id} {direction}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 255), 2)  # ID and direction
-        cv2.circle(img, (cx, cy), 5, (0, 255, 255), -1)  # Center point
-        for pt in id_history[id]:
-            cv2.circle(img, pt, 2, (0, 255, 255), -1)  # Trajectory
+        # Draw visualizations (only if display is enabled)
+        if DISPLAY_WINDOW:
+            cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 255), 2)  # Bounding box
+            cv2.putText(img, f"ID: {id} {direction}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 255), 2)  # ID and direction
+            cv2.circle(img, (cx, cy), 5, (0, 255, 255), -1)  # Center point
+            for pt in id_history[id]:
+                cv2.circle(img, pt, 2, (0, 255, 255), -1)  # Trajectory
 
-    cv2.line(img, (COUNT_LINE[0], COUNT_LINE[1]), (COUNT_LINE[2], COUNT_LINE[3]), (0, 0, 255), 2)  # Counting line
-    cv2.putText(img, f"Total: {len(totalCount)}", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)  # Total count
-    #cv2.putText(img, "Press Q to quit", (400, 340), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 200, 200), 1)  # Quit hint
-    cv2.putText(img, "Press Q to quit", (img.shape[1] - cv2.getTextSize("Press Q to quit", cv2.FONT_HERSHEY_SIMPLEX, 0.6, 1)[0][0] - 20, img.shape[0] - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 200, 200), 1)
+    # Only add visualization if display is enabled
+    if DISPLAY_WINDOW:
+        cv2.line(img, (COUNT_LINE[0], COUNT_LINE[1]), (COUNT_LINE[2], COUNT_LINE[3]), (0, 0, 255), 2)  # Counting line
+        cv2.putText(img, f"Total: {len(totalCount)}", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)  # Total count
+        cv2.putText(img, "Press Q to quit", (img.shape[1] - cv2.getTextSize("Press Q to quit", cv2.FONT_HERSHEY_SIMPLEX, 0.6, 1)[0][0] - 20, img.shape[0] - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 200, 200), 1)
 
-
-    cv2.imshow("Boat Detection Test", img)  # Show the frame
-    if cv2.waitKey(1) & 0xFF == ord("q"):  # Wait for 'q' key to quit
-        break
+        cv2.imshow("Boat Detection Test", img)  # Show the frame
+        if cv2.waitKey(1) & 0xFF == ord("q"):  # Wait for 'q' key to quit
+            break
 
 cap.release()  # Release the video capture
-cv2.destroyAllWindows()  # Close all OpenCV windows
+if DISPLAY_WINDOW:
+    cv2.destroyAllWindows()  # Close all OpenCV windows
 print(f"[🏁 DONE] Final boat count: {len(totalCount)}")  # Print final count

@@ -35,4 +35,4 @@ RUN mkdir -p /app/logs /app/snapshots
 COPY *.py /app/
 
 # Set default command - run the latest version
-CMD ["python", "boat_counter_full_debug-10.py"] 
+CMD ["python", "A2_boat_counter_test_full_cooldown.py"] 
