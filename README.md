@@ -142,4 +142,9 @@ The boat counter can automatically log counts to a Google Sheet:
 
 ## License
 
-[Add your license here] 
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- [Ultralytics](https://github.com/ultralytics/ultralytics) for YOLOv8
+- [SORT](https://github.com/abewley/sort) for object tracking algorithm 
