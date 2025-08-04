@@ -1,0 +1,2 @@
+# This file ensures the models directory is tracked by Git
+# Place YOLOv8 model files in this directory (e.g., yolov8n.pt) 

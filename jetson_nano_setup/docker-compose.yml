@@ -1,0 +1,28 @@
+version: '3'
+
+services:
+  boat-counter:
+    build:
+      context: ..
+      dockerfile: ./jetson_nano_setup/Dockerfile
+    container_name: boat-counter
+    restart: unless-stopped
+    privileged: true  # Needed for camera access
+    environment:
+      - VIDEO_DEVICE_INDEX=0  # Use 0 for default camera, or specify device number
+      - DISPLAY_WINDOW=false  # Set to true for debug with X11 forwarding
+    volumes:
+      # Map snapshots directory to persist images
+      - ../snapshots:/app/snapshots
+      # Optional: map a custom mask if needed
+      # - ../mask.png:/app/mask.png:ro
+      # For camera access
+      - /dev/video0:/dev/video0
+    # For accessing NVIDIA GPU on Jetson
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [compute, utility, video] 

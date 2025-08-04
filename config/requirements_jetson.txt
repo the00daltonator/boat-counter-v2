@@ -1,0 +1,9 @@
+numpy>=1.19.0
+opencv-python>=4.5.0
+# YOLOv8 - use ultralytics compatible with Jetson Nano
+ultralytics==8.0.0
+# Google APIs
+gspread>=5.0.0
+google-auth>=2.0.0
+google-auth-oauthlib>=0.4.6
+google-auth-httplib2>=0.1.0 

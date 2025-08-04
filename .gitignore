@@ -31,12 +31,15 @@ build/
 *.egg-info/
 
 # Google Sheets credentials
+config/gsheets_creds.json
 gsheets_creds.json
+!config/gsheets_creds_template.json
 
 # Models
 *.pt
 *.pth
 *.onnx
+!models/.gitkeep
 
 # Docker
 .dockerignore
