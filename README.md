@@ -28,6 +28,7 @@ boat-counter/
 │   ├── docker-run.sh
 │   └── README-Docker.md
 ├── docs/                 # Documentation
+│   └── GOOGLE_SHEETS_SETUP.md
 ├── jetson_nano_setup/    # Jetson Nano specific setup
 │   ├── Dockerfile
 │   ├── docker-compose.yml
@@ -77,9 +78,9 @@ pip install -r config/requirements.txt
 ```
 
 4. Set up Google Sheets integration (optional):
-   - See `config/README.md` for instructions
+   - See `docs/GOOGLE_SHEETS_SETUP.md` for detailed step-by-step instructions
    - Use `config/gsheets_creds_template.json` as a template
-   - Rename your credentials file to `gsheets_creds.json`
+   - Rename your credentials file to `gsheets_creds.json` and place in the config directory
 
 ### Docker Installation
 
@@ -129,6 +130,15 @@ Key parameters in the main script:
 - `SNAPSHOT_DIR`: Directory to save boat snapshots
 - `GSHEET_CREDS_FILE`: Path to Google Sheets credentials
 - `COOLDOWN_SECONDS`: Cooldown period to prevent duplicate counts
+
+## Google Sheets Integration
+
+The boat counter can automatically log counts to a Google Sheet:
+
+1. Follow the setup guide in `docs/GOOGLE_SHEETS_SETUP.md`
+2. Create a Google Sheet named "Boat Counter Logs"
+3. Share it with the service account email from your credentials
+4. The application will automatically log timestamps and counts
 
 ## License
 
